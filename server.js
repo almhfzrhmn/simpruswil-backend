@@ -96,6 +96,9 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/test', (req, res) => {
   res.json({ message: 'PerpusBooking API is working!' });
 });
+app.get('/', (req, res)=> {
+  res.json({success: true, message: 'welcome to the API'});
+});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/perpusbooking', {
