@@ -76,7 +76,8 @@ app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
 
 // Serve uploaded files statically with caching
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+const uploadsPath = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
   maxAge: '1d', // Cache for 1 day
   etag: true
 }));
