@@ -94,14 +94,16 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'PerpusBooking API is working!' });
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/perpusbooking')
-.then(() => {
-  console.log('Connected to MongoDB');
-})
-.catch((error) => {
-  console.error('MongoDB connection error:', error);
-});
+// MongoDB connection - don't block app startup
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
