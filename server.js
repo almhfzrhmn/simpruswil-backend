@@ -40,28 +40,9 @@ const authLimiter = rateLimit({
   },
 });
 
-// CORS configuration
+// CORS configuration - Allow all origins for now to fix the issue
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    const allowedOrigins = [
-      'http://localhost:3000', // Development
-      'http://localhost:3001', // Development
-      'http://localhost:3002', // Development
-      'https://simpruswil-frontend.vercel.app', // Production
-      'https://simpruswil-frontend-pjhkafdxf.vercel.app', // Current Vercel deployment
-      process.env.CLIENT_URL // From environment variable
-    ].filter(Boolean); // Remove undefined values
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
