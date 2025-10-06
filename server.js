@@ -18,7 +18,7 @@ dotenv.config();
 
 const app = express();
 
-// Trust proxy for Vercel
+// Trust proxy for Railway
 app.set('trust proxy', 1);
 
 // Rate limiting
@@ -79,7 +79,7 @@ app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
 
 // Serve uploaded files statically with caching
-const uploadsPath = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+const uploadsPath = path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath, {
   maxAge: '1d', // Cache for 1 day
   etag: true
@@ -97,16 +97,17 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'PerpusBooking API is working!' });
 });
 
-// MongoDB connection - don't block app startup
-if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-  });
-}
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/perpusbooking', {
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+})
+.then(() => {
+  console.log('Connected to MongoDB');
+})
+.catch((error) => {
+  console.error('MongoDB connection error:', error);
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -129,11 +130,6 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
-if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-}
-
-// Export for Vercel serverless
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

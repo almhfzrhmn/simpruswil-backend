@@ -14,15 +14,13 @@ const createUploadDirs = () => {
   });
 };
 
-// Initialize upload directories (skip in Vercel serverless)
-if (!process.env.VERCEL) {
-  createUploadDirs();
-}
+// Initialize upload directories
+createUploadDirs();
 
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let uploadPath = process.env.VERCEL ? '/tmp/uploads/' : 'uploads/';
+    let uploadPath = 'uploads/';
 
     // Determine upload path based on file type or route
     if (req.route.path.includes('document') || file.fieldname === 'document') {
