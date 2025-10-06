@@ -115,19 +115,20 @@ app.use((err, req, res, next) => {
 
 // Handle 404
 app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Route not found' 
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl
   });
 });
 
 const PORT = process.env.PORT || 5001;
-
-// Export for Vercel serverless
-module.exports = app;
 
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }
+
+// Export for Vercel serverless
+module.exports = app;

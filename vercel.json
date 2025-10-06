@@ -8,16 +8,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "server.js"
-    },
-    {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "/server.js"
     }
-  ]
+  ],
+  "env": {
+    "VERCEL": "1"
+  }
 }
