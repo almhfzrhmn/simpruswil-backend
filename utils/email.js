@@ -1,23 +1,41 @@
-const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 // ====================================================================
-// REKOMENDASI: Buat transporter HANYA SEKALI dan gunakan kembali.
-// Ini jauh lebih efisien daripada membuat koneksi baru untuk setiap email.
-// Opsi 'tls' yang tidak aman juga telah dihapus.
+// Menggunakan SendGrid API langsung untuk menghindari blokir SMTP di Railway
 // ====================================================================
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT || 587,
-  secure: false, // STARTTLS untuk SendGrid
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  // Tambahkan opsi untuk debugging
-  debug: process.env.NODE_ENV !== 'production',
-  logger: process.env.NODE_ENV !== 'production'
-});
+const sendGridAPI = async (mailOptions) => {
+  const apiKey = process.env.SENDGRID_API_KEY || process.env.EMAIL_PASS;
+
+  if (!apiKey || !apiKey.startsWith('SG.')) {
+    throw new Error('SendGrid API key not configured properly');
+  }
+
+  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      personalizations: [{
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject
+      }],
+      from: { email: mailOptions.from.replace(/.*<(.+)>/, '$1') },
+      content: [{
+        type: 'text/html',
+        value: mailOptions.html
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`SendGrid API error: ${response.status} ${error}`);
+  }
+
+  return { messageId: response.headers.get('x-message-id') };
+};
 
 // ====================================================================
 // REKOMENDASI: Pindahkan fungsi helper ke luar agar tidak duplikat (Prinsip DRY)
@@ -48,6 +66,12 @@ const formatTime = (date) => {
  * Mengirim email verifikasi pendaftaran.
  */
 const sendVerificationEmail = async (user, verificationToken) => {
+  // Skip email sending if disabled
+  if (process.env.DISABLE_EMAIL === 'true') {
+    console.log('Email sending disabled - skipping verification email');
+    return;
+  }
+
   // Add timeout to prevent hanging
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => reject(new Error('Email sending timeout')), 10000); // 10 second timeout
@@ -94,7 +118,7 @@ const sendVerificationEmail = async (user, verificationToken) => {
       html: htmlContent
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendGridAPI(mailOptions);
     console.log(`Verification email sent to ${user.email}`);
   };
 
@@ -110,6 +134,11 @@ const sendVerificationEmail = async (user, verificationToken) => {
  * Mengirim notifikasi status peminjaman ruangan.
  */
 const sendBookingNotification = async (booking, status) => {
+  // Skip email sending if disabled
+  if (process.env.DISABLE_EMAIL === 'true') {
+    console.log('Email sending disabled - skipping booking notification');
+    return;
+  }
   let statusText, statusColor, message;
   switch (status) {
     case 'approved':
@@ -170,7 +199,7 @@ const sendBookingNotification = async (booking, status) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendGridAPI(mailOptions);
     console.log(`Booking notification sent to ${booking.userId.email}`);
   } catch (error) {
     console.error('Error sending booking notification:', error);
@@ -182,6 +211,12 @@ const sendBookingNotification = async (booking, status) => {
  * Mengirim notifikasi status tur perpustakaan.
  */
 const sendTourNotification = async (tour, status) => {
+    // Skip email sending if disabled
+    if (process.env.DISABLE_EMAIL === 'true') {
+        console.log('Email sending disabled - skipping tour notification');
+        return;
+    }
+
     // Validasi data tour dan userId
     if (!tour || !tour.userId) {
         console.error('Error: Tour or userId is missing');
@@ -259,7 +294,7 @@ const sendTourNotification = async (tour, status) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await sendGridAPI(mailOptions);
         console.log(`Tour notification sent to ${recipientEmail}`);
     } catch (error) {
         console.error('Error sending tour notification:', error);
@@ -272,6 +307,12 @@ const sendTourNotification = async (tour, status) => {
  * Mengirim email untuk reset password.
  */
 const sendPasswordResetEmail = async (user, resetToken) => {
+  // Skip email sending if disabled
+  if (process.env.DISABLE_EMAIL === 'true') {
+    console.log('Email sending disabled - skipping password reset email');
+    return;
+  }
+
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}&email=${user.email}`;
   
   const htmlContent = `
@@ -313,7 +354,7 @@ const sendPasswordResetEmail = async (user, resetToken) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sendGridAPI(mailOptions);
     console.log(`Password reset email sent to ${user.email}`);
   } catch (error) {
     console.error('Error sending password reset email:', error);
@@ -363,7 +404,7 @@ const sendWelcomeEmail = async (user) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await sendGridAPI(mailOptions);
         console.log(`Welcome email sent to ${user.email}`);
     } catch (error) {
         // Pengiriman email selamat datang tidak kritis, jadi kita hanya log error
@@ -372,15 +413,35 @@ const sendWelcomeEmail = async (user) => {
 };
 
 /**
- * Memverifikasi koneksi ke server SMTP.
+ * Memverifikasi koneksi ke SendGrid API.
  */
 const testEmailConnection = async () => {
   try {
-    await transporter.verify();
-    console.log('Email server connection is valid and ready.');
-    return true;
+    const apiKey = process.env.SENDGRID_API_KEY || process.env.EMAIL_PASS;
+
+    if (!apiKey || !apiKey.startsWith('SG.')) {
+      console.error('SendGrid API key not configured');
+      return false;
+    }
+
+    // Test API key validity by making a small request
+    const response = await fetch('https://api.sendgrid.com/v3/user/account', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (response.ok) {
+      console.log('SendGrid API connection is valid and ready.');
+      return true;
+    } else {
+      console.error('SendGrid API key invalid:', response.status, await response.text());
+      return false;
+    }
   } catch (error) {
-    console.error('Email server connection error:', error);
+    console.error('SendGrid API connection error:', error);
     return false;
   }
 };
