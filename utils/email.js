@@ -7,14 +7,16 @@ require('dotenv').config();
 // Opsi 'tls' yang tidak aman juga telah dihapus.
 // ====================================================================
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT || 587,
+  secure: false, // STARTTLS untuk SendGrid
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   // Tambahkan opsi untuk debugging
-  debug: true,
-  logger: true
+  debug: process.env.NODE_ENV !== 'production',
+  logger: process.env.NODE_ENV !== 'production'
 });
 
 // ====================================================================
