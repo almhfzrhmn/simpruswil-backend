@@ -78,8 +78,8 @@ app.use(express.json({ limit: '10mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply rate limiting
-app.use('/api/', limiter);
-app.use('/api/auth/', authLimiter);
+app.use('/', limiter);
+app.use('/auth/', authLimiter);
 
 // Serve uploaded files statically with caching
 const uploadsPath = path.join(__dirname, 'uploads');
@@ -89,14 +89,14 @@ app.use('/uploads', express.static(uploadsPath, {
 }));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/tours', tourRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/auth', authRoutes);
+app.use('/rooms', roomRoutes);
+app.use('/bookings', bookingRoutes);
+app.use('/tours', tourRoutes);
+app.use('/admin', adminRoutes);
 
 // Upload route
-app.post('/api/upload', uploadDocument, handleUploadError, generateFileUrl, (req, res) => {
+app.post('/upload', uploadDocument, handleUploadError, generateFileUrl, (req, res) => {
   if (!req.file) {
     return res.status(400).json({
       success: false,
