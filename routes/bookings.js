@@ -102,9 +102,9 @@ router.post('/', protect, uploadDocument, handleUploadError, generateFileUrl, as
       });
     }
 
-    // Check working hours
-    const startHour = bookingStartTime.getHours();
-    const endHour = bookingEndTime.getHours();
+    // Check working hours (convert UTC to Jakarta time UTC+7)
+    const startHour = (bookingStartTime.getUTCHours() + 7) % 24;
+    const endHour = (bookingEndTime.getUTCHours() + 7) % 24;
     const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
     const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
 
@@ -343,6 +343,15 @@ router.put('/:id', protect, uploadDocument, handleUploadError, generateFileUrl, 
       });
     }
 
+    // Get room data for operating hours check
+    const room = await Room.findById(booking.roomId);
+    if (!room || !room.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ruangan tidak ditemukan atau tidak aktif'
+      });
+    }
+
     const {
       activityName,
       purpose,
@@ -396,6 +405,21 @@ router.put('/:id', protect, uploadDocument, handleUploadError, generateFileUrl, 
         return res.status(400).json({
           success: false,
           message: 'Tidak dapat mengatur waktu untuk masa lalu'
+        });
+      }
+
+      // Check working hours (convert UTC to Jakarta time UTC+7)
+      const newStartHour = (newStartTime.getUTCHours() + 7) % 24;
+      const newEndHour = (newEndTime.getUTCHours() + 7) % 24;
+      const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
+      const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
+
+      if (newStartHour < roomStartHour || newEndHour > roomEndHour) {
+        const startTimeStr = room.operatingHours && room.operatingHours.start ? room.operatingHours.start : '08:00';
+        const endTimeStr = room.operatingHours && room.operatingHours.end ? room.operatingHours.end : '17:00';
+        return res.status(400).json({
+          success: false,
+          message: `Ruangan hanya beroperasi dari ${startTimeStr} - ${endTimeStr}`
         });
       }
 
