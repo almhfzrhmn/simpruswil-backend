@@ -165,6 +165,36 @@ app.get('/test-email', async (req, res) => {
   }
 });
 
+// Download document route
+app.get('/download/:type/:filename', (req, res) => {
+  const { type, filename } = req.params;
+  const filePath = path.join(__dirname, 'uploads', type, filename);
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      success: false,
+      message: 'File not found'
+    });
+  }
+
+  // Set headers for download
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', 'application/octet-stream');
+
+  // Stream the file
+  const fileStream = fs.createReadStream(filePath);
+  fileStream.pipe(res);
+
+  fileStream.on('error', (error) => {
+    console.error('Error streaming file:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error downloading file'
+    });
+  });
+});
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/perpusbooking', {
   serverSelectionTimeoutMS: 10000,

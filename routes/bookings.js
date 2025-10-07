@@ -2,16 +2,24 @@ const express = require('express');
 const Booking = require('../models/Booking');
 const Room = require('../models/Room');
 const { protect, authorize } = require('../middleware/auth');
-const { 
-  uploadDocument, 
-  handleUploadError, 
-  validateFileExists, 
-  generateFileUrl, 
-  deleteFile 
+const {
+  uploadDocument,
+  handleUploadError,
+  validateFileExists,
+  generateFileUrl,
+  deleteFile
 } = require('../middleware/upload');
 const { sendBookingNotification } = require('../utils/email');
 
 const router = express.Router();
+
+// Helper function to generate download URL
+const generateDownloadUrl = (req, documentPath) => {
+  if (!documentPath) return null;
+  const filename = documentPath.split('/').pop();
+  const type = documentPath.includes('/documents/') ? 'documents' : 'temp';
+  return `${req.protocol}://${req.get('host')}/download/${type}/${filename}`;
+};
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -161,7 +169,7 @@ router.post('/', protect, uploadDocument, handleUploadError, generateFileUrl, as
       message: 'Booking berhasil diajukan. Menunggu persetujuan admin.',
       data: {
         ...booking.toObject(),
-        documentUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`
+        documentUrl: generateDownloadUrl(req, booking.documentPath)
       }
     });
 
@@ -232,7 +240,7 @@ router.get('/my-bookings', protect, async (req, res) => {
     // Add document URL to each booking
     const bookingsWithUrls = bookings.map(booking => ({
       ...booking.toObject(),
-      documentUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`,
+      documentUrl: generateDownloadUrl(req, booking.documentPath),
       roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
     }));
 
@@ -283,7 +291,7 @@ router.get('/:id', protect, async (req, res) => {
       success: true,
       data: {
         ...booking.toObject(),
-        documentUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`,
+        documentUrl: generateDownloadUrl(req, booking.documentPath),
         roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
       }
     });
@@ -479,7 +487,7 @@ router.put('/:id', protect, uploadDocument, handleUploadError, generateFileUrl, 
       message: 'Booking berhasil diupdate',
       data: {
         ...updatedBooking.toObject(),
-        documentUrl: `${req.protocol}://${req.get('host')}/${updatedBooking.documentPath}`
+        documentUrl: generateDownloadUrl(req, updatedBooking.documentPath)
       }
     });
 
@@ -772,7 +780,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
     // Add URLs to response
     const bookingsWithUrls = bookings.map(booking => ({
       ...booking,
-      documentUrl: booking.documentPath ? `${req.protocol}://${req.get('host')}/${booking.documentPath}` : null,
+      documentUrl: generateDownloadUrl(req, booking.documentPath),
       roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
     }));
 
@@ -1108,7 +1116,7 @@ router.get('/admin/upcoming', protect, authorize('admin'), async (req, res) => {
 
     const bookingsWithUrls = upcomingBookings.map(booking => ({
       ...booking.toObject(),
-      documentUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`
+      documentUrl: generateDownloadUrl(req, booking.documentPath)
     }));
 
     res.status(200).json({

@@ -12,6 +12,14 @@ const { sendTourNotification } = require('../utils/email');
 
 const router = express.Router();
 
+// Helper function to generate download URL
+const generateDownloadUrl = (req, documentPath) => {
+  if (!documentPath) return null;
+  const filename = documentPath.split('/').pop();
+  const type = documentPath.includes('/documents/') ? 'documents' : 'temp';
+  return `${req.protocol}://${req.get('host')}/download/${type}/${filename}`;
+};
+
 // @desc    Create new tour request
 // @route   POST /api/tours
 // @access  Private
@@ -145,7 +153,7 @@ router.post('/', protect, uploadDocument, handleUploadError, generateFileUrl, as
       message: 'Pengajuan tur perpustakaan berhasil diajukan. Menunggu persetujuan admin.',
       data: {
         ...tour.toObject(),
-        documentUrl: req.file ? `${req.protocol}://${req.get('host')}/${tour.documentPath}` : null
+        documentUrl: generateDownloadUrl(req, tour.documentPath)
       }
     });
 
@@ -766,7 +774,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
     // Add document URLs to tours
     const toursWithUrls = tours.map(tour => ({
       ...tour,
-      documentUrl: tour.documentPath ? `${req.protocol}://${req.get('host')}/${tour.documentPath}` : null,
+      documentUrl: generateDownloadUrl(req, tour.documentPath),
       // Ensure documentPath is preserved for download functionality
       documentPath: tour.documentPath || null
     }));

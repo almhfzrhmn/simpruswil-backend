@@ -9,6 +9,14 @@ const { sendBookingNotification, sendTourNotification } = require('../utils/emai
 
 const router = express.Router();
 
+// Helper function to generate download URL
+const generateDownloadUrl = (req, documentPath) => {
+  if (!documentPath) return null;
+  const filename = documentPath.split('/').pop();
+  const type = documentPath.includes('/documents/') ? 'documents' : 'temp';
+  return `${req.protocol}://${req.get('host')}/download/${type}/${filename}`;
+};
+
 // All routes in this file require admin authorization
 router.use(protect, authorize('admin'));
 
@@ -179,7 +187,7 @@ router.get('/dashboard', async (req, res) => {
     // Add document URLs to pending bookings
     const pendingBookingsWithUrls = pendingBookings.map(booking => ({
       ...booking.toObject(),
-      documentUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`
+      documentUrl: generateDownloadUrl(req, booking.documentPath)
     }));
 
     res.status(200).json({
