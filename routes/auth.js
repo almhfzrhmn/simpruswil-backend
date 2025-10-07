@@ -11,10 +11,6 @@ const {
 
 const router = express.Router();
 
-// Tes Login
-router.get('/login', (req, res) => {
-  res.status(405).json({ success: false, message: 'Method not allowed' });
-});
 
 // Generate JWT token
 const generateToken = (id) => {

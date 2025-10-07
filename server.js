@@ -75,8 +75,8 @@ app.use(express.json({ limit: '10mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply rate limiting
-app.use('/', limiter);
-app.use('/auth/', authLimiter);
+app.use('/api/', limiter);
+app.use('/api/auth/', authLimiter);
 
 // Serve uploaded files statically with caching
 const uploadsPath = path.join(__dirname, 'uploads');
