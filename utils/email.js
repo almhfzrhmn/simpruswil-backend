@@ -8,12 +8,18 @@ require('dotenv').config();
 // ====================================================================
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_PORT == 465, // True jika port 465, false untuk port lain
+  port: 465, // Gunakan SSL port
+  secure: true, // SSL
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false // Untuk development/debugging
+  },
+  // Tambahkan opsi untuk debugging
+  debug: true,
+  logger: true
 });
 
 // ====================================================================
