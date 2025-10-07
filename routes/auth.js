@@ -11,6 +11,11 @@ const {
 
 const router = express.Router();
 
+// Tes Login
+router.get('/login', (req, res) => {
+  res.status(405).json({ success: false, message: 'Method not allowed' });
+});
+
 // Generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -513,6 +518,7 @@ router.put('/change-password', protect, async (req, res) => {
       message: 'Server error saat ganti password'
     });
   }
+
 });
 
 module.exports = router;
