@@ -13,6 +13,9 @@ const bookingRoutes = require('./routes/bookings');
 const tourRoutes = require('./routes/tours');
 const adminRoutes = require('./routes/admin');
 
+// Import upload middleware
+const { uploadDocument, handleUploadError, generateFileUrl } = require('./middleware/upload');
+
 // Load environment variables
 dotenv.config();
 
@@ -86,11 +89,33 @@ app.use('/uploads', express.static(uploadsPath, {
 }));
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/rooms', roomRoutes);
-app.use('/bookings', bookingRoutes);
-app.use('/tours', tourRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/tours', tourRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Upload route
+app.post('/api/upload', uploadDocument, handleUploadError, generateFileUrl, (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No file uploaded'
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'File uploaded successfully',
+    file: {
+      filename: req.file.filename,
+      originalname: req.file.originalname,
+      path: req.file.path,
+      url: req.file.url,
+      size: req.file.size
+    }
+  });
+});
 
 // Test route
 app.get('/test', (req, res) => {

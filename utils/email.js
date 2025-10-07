@@ -45,49 +45,58 @@ const formatTime = (date) => {
  * Mengirim email verifikasi pendaftaran.
  */
 const sendVerificationEmail = async (user, verificationToken) => {
-  const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}&email=${user.email}`;
-  
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Verifikasi Email - PerpusBooking</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; }
-        .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .button { display: inline-block; background-color: #2563eb; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header"><h1>PerpusBooking</h1><h2>Verifikasi Email Anda</h2></div>
-        <div class="content">
-          <p>Halo ${user.name},</p>
-          <p>Terima kasih telah mendaftar. Untuk mengaktifkan akun Anda, silakan klik tombol di bawah ini:</p>
-          <div style="text-align: center;"><a href="${verificationUrl}" class="button">Verifikasi Email</a></div>
-          <p>Link ini akan kedaluwarsa dalam 24 jam.</p>
-          <p>Jika Anda tidak mendaftar, abaikan email ini.</p>
-        </div>
-        <div class="footer"><p>&copy; ${new Date().getFullYear()} PerpusBooking - Pustaka Wilayah Aceh</p></div>
-      </div>
-    </body>
-    </html>
-  `;
+  // Add timeout to prevent hanging
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Email sending timeout')), 10000); // 10 second timeout
+  });
 
-  const mailOptions = {
-    from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
-    to: user.email,
-    subject: 'Verifikasi Email - PerpusBooking',
-    html: htmlContent
+  const sendEmailPromise = async () => {
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}&email=${user.email}`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Verifikasi Email - PerpusBooking</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; }
+          .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; }
+          .button { display: inline-block; background-color: #2563eb; color: white !important; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header"><h1>PerpusBooking</h1><h2>Verifikasi Email Anda</h2></div>
+          <div class="content">
+            <p>Halo ${user.name},</p>
+            <p>Terima kasih telah mendaftar. Untuk mengaktifkan akun Anda, silakan klik tombol di bawah ini:</p>
+            <div style="text-align: center;"><a href="${verificationUrl}" class="button">Verifikasi Email</a></div>
+            <p>Link ini akan kedaluwarsa dalam 24 jam.</p>
+            <p>Jika Anda tidak mendaftar, abaikan email ini.</p>
+          </div>
+          <div class="footer"><p>&copy; ${new Date().getFullYear()} PerpusBooking - Pustaka Wilayah Aceh</p></div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+      to: user.email,
+      subject: 'Verifikasi Email - PerpusBooking',
+      html: htmlContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Verification email sent to ${user.email}`);
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${user.email}`);
+    await Promise.race([sendEmailPromise(), timeoutPromise]);
   } catch (error) {
     console.error('Error sending verification email:', error);
     throw new Error('Gagal mengirim email verifikasi');

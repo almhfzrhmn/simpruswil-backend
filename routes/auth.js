@@ -88,24 +88,23 @@ router.post('/register', rateLimiter(15 * 60 * 1000, 5), async (req, res) => {
     const verificationToken = user.generateVerificationToken();
     await user.save({ validateBeforeSave: false });
 
-    try {
-      await sendVerificationEmail(user, verificationToken);
-      
-      // REKOMENDASI: Respons disederhanakan
-      res.status(201).json({
-        success: true,
-        message: `Pendaftaran berhasil. Email verifikasi telah dikirim ke ${user.email}. Silakan periksa kotak masuk Anda.`
-      });
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      
-      await User.findByIdAndDelete(user._id);
-      
-      return res.status(500).json({
-        success: false,
-        message: 'Gagal mengirim email verifikasi. Silakan coba lagi.'
-      });
-    }
+    // Send verification email asynchronously - don't wait for it
+    sendVerificationEmail(user, verificationToken).catch(error => {
+      console.error('Failed to send verification email:', error);
+      // Don't delete user - just log the error
+      // User can still verify manually or request resend
+    });
+
+    // Return success immediately
+    res.status(201).json({
+      success: true,
+      message: `Pendaftaran berhasil. Email verifikasi telah dikirim ke ${user.email}. Silakan periksa kotak masuk Anda.`,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
 
   } catch (error) {
     console.error('Register error:', error);
