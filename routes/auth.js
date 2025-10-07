@@ -85,24 +85,27 @@ router.post('/register', rateLimiter(15 * 60 * 1000, 5), async (req, res) => {
       phoneNumber: phoneNumber.trim()
     });
 
-    const verificationToken = user.generateVerificationToken();
+    // For now, auto-verify users since email service is not working
+    user.isVerified = true;
     await user.save({ validateBeforeSave: false });
 
-    // Send verification email asynchronously - don't wait for it
-    sendVerificationEmail(user, verificationToken).catch(error => {
-      console.error('Failed to send verification email:', error);
-      // Don't delete user - just log the error
-      // User can still verify manually or request resend
-    });
+    // TODO: Re-enable email verification when email service is configured
+    // const verificationToken = user.generateVerificationToken();
+    // await user.save({ validateBeforeSave: false });
+    //
+    // sendVerificationEmail(user, verificationToken).catch(error => {
+    //   console.error('Failed to send verification email:', error);
+    // });
 
     // Return success immediately
     res.status(201).json({
       success: true,
-      message: `Pendaftaran berhasil. Email verifikasi telah dikirim ke ${user.email}. Silakan periksa kotak masuk Anda.`,
+      message: `Pendaftaran berhasil! Akun Anda telah aktif. Silakan login untuk melanjutkan.`,
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        isVerified: user.isVerified
       }
     });
 
