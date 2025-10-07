@@ -85,7 +85,7 @@ const sendVerificationEmail = async (user, verificationToken) => {
     `;
 
     const mailOptions = {
-      from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+      from: `PerpusBooking <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to: user.email,
       subject: 'Verifikasi Email - PerpusBooking',
       html: htmlContent
@@ -160,7 +160,7 @@ const sendBookingNotification = async (booking, status) => {
   `;
 
   const mailOptions = {
-    from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+    from: `PerpusBooking <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
     to: booking.userId.email,
     subject: `Update Status Peminjaman - ${statusText}`,
     html: htmlContent
@@ -249,7 +249,7 @@ const sendTourNotification = async (tour, status) => {
     `;
 
     const mailOptions = {
-        from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+        from: `PerpusBooking <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to: recipientEmail,
         subject: `Update Status Tur Perpustakaan - ${statusText}`,
         html: htmlContent
@@ -303,7 +303,7 @@ const sendPasswordResetEmail = async (user, resetToken) => {
   `;
 
   const mailOptions = {
-    from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+    from: `PerpusBooking <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
     to: user.email,
     subject: 'Reset Password - PerpusBooking',
     html: htmlContent
@@ -353,7 +353,7 @@ const sendWelcomeEmail = async (user) => {
     `;
 
     const mailOptions = {
-        from: `PerpusBooking <${process.env.EMAIL_FROM}>`,
+        from: `PerpusBooking <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to: user.email,
         subject: '🎉 Selamat Datang di PerpusBooking!',
         html: htmlContent

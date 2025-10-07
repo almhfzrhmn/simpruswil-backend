@@ -125,6 +125,46 @@ app.get('/', (req, res)=> {
   res.json({success: true, message: 'welcome to the API'});
 });
 
+// Test email route
+app.get('/test-email', async (req, res) => {
+  try {
+    const { testEmailConnection } = require('./utils/email');
+    const isConnected = await testEmailConnection();
+
+    if (isConnected) {
+      res.json({
+        success: true,
+        message: 'Email connection successful',
+        config: {
+          host: process.env.EMAIL_HOST,
+          port: process.env.EMAIL_PORT,
+          user: process.env.EMAIL_USER ? '***configured***' : 'not set',
+          from: process.env.EMAIL_FROM,
+          clientUrl: process.env.CLIENT_URL
+        }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Email connection failed',
+        config: {
+          host: process.env.EMAIL_HOST,
+          port: process.env.EMAIL_PORT,
+          user: process.env.EMAIL_USER ? '***configured***' : 'not set',
+          from: process.env.EMAIL_FROM,
+          clientUrl: process.env.CLIENT_URL
+        }
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Email test error',
+      error: error.message
+    });
+  }
+});
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/perpusbooking', {
   serverSelectionTimeoutMS: 10000,
