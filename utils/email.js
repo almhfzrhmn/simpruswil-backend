@@ -7,15 +7,10 @@ require('dotenv').config();
 // Opsi 'tls' yang tidak aman juga telah dihapus.
 // ====================================================================
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: 465, // Gunakan SSL port
-  secure: true, // SSL
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false // Untuk development/debugging
   },
   // Tambahkan opsi untuk debugging
   debug: true,
