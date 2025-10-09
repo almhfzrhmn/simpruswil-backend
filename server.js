@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
@@ -166,7 +167,7 @@ app.get('/test-email', async (req, res) => {
 });
 
 // Download/View document route
-app.get('/download/:type/:filename', (req, res) => {
+app.get('/download/uploads/:type/:filename', (req, res) => {
   const { type, filename } = req.params;
   const filePath = path.join(__dirname, 'uploads', type, filename);
 

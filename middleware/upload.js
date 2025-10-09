@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
       uploadPath += 'rooms/';
     } else {
       uploadPath += 'temp/';
-    }
+    } 
 
     // Ensure directory exists
     const fs = require('fs');

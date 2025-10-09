@@ -18,7 +18,7 @@ const generateDownloadUrl = (req, documentPath) => {
   if (!documentPath) return null;
   const filename = documentPath.split('/').pop();
   const type = 'documents'; // All documents are stored in documents folder
-  return `${req.protocol}://${req.get('host')}/download/${type}/${filename}`;
+  return `${req.protocol}://${req.get('host')}/download/uploads/${type}/${filename}`;
 };
 
 // @desc    Create new booking
@@ -651,142 +651,76 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
+    // Build query
+    const query = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (roomId) {
+      query.roomId = roomId;
+    }
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.startTime = {};
+      if (startDate) {
+        query.startTime.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.startTime.$lte = new Date(endDate);
+      }
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
     // Pagination
     const pageNumber = parseInt(page);
     const pageSize = parseInt(limit);
     const skip = (pageNumber - 1) * pageSize;
 
-    // Build aggregation pipeline
-    const pipeline = [];
+    // Get total count
+    const total = await Booking.countDocuments(query);
 
-    // Initial match conditions
-    const matchConditions = {};
+    // Execute query with populate
+    let bookings = await Booking.find(query)
+      .sort(sort)
+      .skip(skip)
+      .limit(pageSize)
+      .populate('userId', 'name email originInstitution phoneNumber')
+      .populate('roomId', 'roomName capacity location image');
 
-    if (status) {
-      matchConditions.status = status;
-    }
-
-    if (roomId) {
-      matchConditions.roomId = require('mongoose').Types.ObjectId(roomId);
-    }
-
-    if (userId) {
-      matchConditions.userId = require('mongoose').Types.ObjectId(userId);
-    }
-
-    // Date range filter
-    if (startDate || endDate) {
-      matchConditions.startTime = {};
-      if (startDate) {
-        matchConditions.startTime.$gte = new Date(startDate);
-      }
-      if (endDate) {
-        matchConditions.startTime.$lte = new Date(endDate);
-      }
-    }
-
-    // Add initial match if there are conditions
-    if (Object.keys(matchConditions).length > 0) {
-      pipeline.push({ $match: matchConditions });
-    }
-
-    // Lookup users and rooms
-    pipeline.push(
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'userId'
-        }
-      },
-      {
-        $lookup: {
-          from: 'rooms',
-          localField: 'roomId',
-          foreignField: '_id',
-          as: 'roomId'
-        }
-      },
-      {
-        $unwind: { path: '$userId', preserveNullAndEmptyArrays: true }
-      },
-      {
-        $unwind: { path: '$roomId', preserveNullAndEmptyArrays: true }
-      }
-    );
-
-    // Search filter - applied after lookups
+    // Apply search filter in JavaScript if search is provided
     if (search) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { activityName: { $regex: search, $options: 'i' } },
-            { 'userId.name': { $regex: search, $options: 'i' } },
-            { 'userId.email': { $regex: search, $options: 'i' } },
-            { 'roomId.roomName': { $regex: search, $options: 'i' } },
-            { purpose: { $regex: search, $options: 'i' } }
-          ]
-        }
+      const searchRegex = new RegExp(search, 'i');
+      bookings = bookings.filter(booking => {
+        return (
+          searchRegex.test(booking.activityName) ||
+          searchRegex.test(booking.purpose) ||
+          (booking.userId && searchRegex.test(booking.userId.name)) ||
+          (booking.userId && searchRegex.test(booking.userId.email)) ||
+          (booking.roomId && searchRegex.test(booking.roomId.roomName))
+        );
       });
     }
 
-    // Add projection to limit fields
-    pipeline.push({
-      $project: {
-        activityName: 1,
-        purpose: 1,
-        startTime: 1,
-        endTime: 1,
-        status: 1,
-        participantsCount: 1,
-        notes: 1,
-        documentPath: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        userId: {
-          _id: 1,
-          name: 1,
-          email: 1,
-          originInstitution: 1,
-          phoneNumber: 1
-        },
-        roomId: {
-          _id: 1,
-          roomName: 1,
-          capacity: 1,
-          location: 1,
-          image: 1
-        }
-      }
-    });
-
-    // Get total count for pagination
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const countResult = await Booking.aggregate(countPipeline);
-    const total = countResult.length > 0 ? countResult[0].total : 0;
-
-    // Add sorting
-    const sortObj = {};
-    sortObj[sortBy] = sortOrder === 'desc' ? -1 : 1;
-    pipeline.push({ $sort: sortObj });
-
-    // Add pagination
-    pipeline.push({ $skip: skip }, { $limit: pageSize });
-
-    // Execute aggregation
-    const bookings = await Booking.aggregate(pipeline);
-
     // Add URLs to response
     const bookingsWithUrls = bookings.map(booking => ({
-      ...booking,
+      ...booking.toObject(),
       documentUrl: generateDownloadUrl(req, booking.documentPath),
       roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
     }));
 
     res.status(200).json({
       success: true,
-      count: bookings.length,
+      count: bookingsWithUrls.length,
       pagination: {
         page: pageNumber,
         limit: pageSize,

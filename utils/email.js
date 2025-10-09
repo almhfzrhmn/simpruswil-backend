@@ -238,6 +238,9 @@ const sendTourNotification = async (tour, status) => {
         case 'rejected':
             statusText = 'DITOLAK'; statusColor = '#ef4444';
             message = 'Mohon maaf, pengajuan tur perpustakaan Anda tidak dapat disetujui.'; break;
+        case 'completed':
+            statusText = 'SELESAI'; statusColor = '#10b981';
+            message = 'Tur perpustakaan Anda telah selesai. Terima kasih atas kunjungan Anda.'; break;
         default:
             statusText = 'PENDING'; statusColor = '#f59e0b';
             message = 'Pengajuan tur perpustakaan Anda sedang diproses.';

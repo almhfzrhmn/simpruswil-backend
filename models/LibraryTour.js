@@ -277,17 +277,27 @@ libraryTourSchema.statics.findByDateRange = async function(startDate, endDate) {
 
 // Instance method to update status
 libraryTourSchema.methods.updateStatus = async function(newStatus, adminNote = '', adminId = null) {
-  this.status = newStatus;
-  this.adminNote = adminNote;
+  try {
+    this.status = newStatus;
+    this.adminNote = adminNote;
 
-  // Add to status history
-  this.statusHistory.push({
-    status: newStatus,
-    changedBy: adminId,
-    note: adminNote
-  });
+    // Ensure statusHistory is an array
+    if (!Array.isArray(this.statusHistory)) {
+      this.statusHistory = [];
+    }
 
-  return this.save();
+    // Add to status history
+    this.statusHistory.push({
+      status: newStatus,
+      changedBy: adminId,
+      note: adminNote
+    });
+
+    return await this.save();
+  } catch (error) {
+    console.error('Error in updateStatus method:', error);
+    throw error;
+  }
 };
 
 module.exports = mongoose.model('LibraryTour', libraryTourSchema);
