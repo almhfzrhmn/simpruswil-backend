@@ -13,7 +13,7 @@ const router = express.Router();
 const generateDownloadUrl = (req, documentPath) => {
   if (!documentPath) return null;
   const filename = documentPath.split('/').pop();
-  const type = documentPath.includes('/documents/') ? 'documents' : 'temp';
+  const type = 'documents'; // All documents are stored in documents folder
   return `${req.protocol}://${req.get('host')}/download/${type}/${filename}`;
 };
 
