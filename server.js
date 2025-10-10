@@ -167,7 +167,7 @@ app.get('/test-email', async (req, res) => {
 });
 
 // Download/View document route
-app.get('/download/uploads/:type/:filename', (req, res) => {
+app.get('/uploads/documents/:type/:filename', (req, res) => {
   const { type, filename } = req.params;
   const filePath = path.join(__dirname, 'uploads', type, filename);
 
