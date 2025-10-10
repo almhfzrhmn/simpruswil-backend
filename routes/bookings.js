@@ -16,9 +16,7 @@ const router = express.Router();
 // Helper function to generate download URL
 const generateDownloadUrl = (req, documentPath) => {
   if (!documentPath) return null;
-  const filename = documentPath.split('/').pop();
-  const type = 'documents'; // All documents are stored in documents folder
-  return `${req.protocol}://${req.get('host')}/uploads/documents/${type}/${filename}`;
+  return `${req.protocol}://${req.get('host')}/${documentPath}`;
 };
 
 // @desc    Create new booking
