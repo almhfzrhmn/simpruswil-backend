@@ -888,12 +888,16 @@ router.patch('/:id/status', protect, authorize('admin'), async (req, res) => {
     // Populate userId before sending email notification
     await tour.populate('userId', 'name email originInstitution');
 
-    // Send notification email
-    try {
-      await sendTourNotification(tour, status);
-    } catch (emailError) {
-      console.error('Failed to send tour notification:', emailError);
-      // Don't fail the request if email fails
+    // Send notification email only if user exists
+    if (tour.userId) {
+      try {
+        await sendTourNotification(tour, status);
+      } catch (emailError) {
+        console.error('Failed to send tour notification:', emailError);
+        // Don't fail the request if email fails
+      }
+    } else {
+      console.warn(`Cannot send tour notification: User not found for tour ${tour._id}`);
     }
 
     res.status(200).json({

@@ -147,6 +147,9 @@ const sendBookingNotification = async (booking, status) => {
     case 'rejected':
       statusText = 'DITOLAK'; statusColor = '#ef4444';
       message = 'Mohon maaf, pengajuan peminjaman ruang Anda tidak dapat disetujui.'; break;
+    case 'completed':
+      statusText = 'SELESAI'; statusColor = '#10b981';
+      message = 'Peminjaman ruang Anda telah selesai. Terima kasih atas kunjungan Anda.'; break;
     default:
       statusText = 'PENDING'; statusColor = '#f59e0b';
       message = 'Pengajuan peminjaman ruang Anda sedang diproses.';
@@ -219,14 +222,14 @@ const sendTourNotification = async (tour, status) => {
 
     // Validasi data tour dan userId
     if (!tour || !tour.userId) {
-        console.error('Error: Tour or userId is missing');
+        console.error('Error: Tour or userId is missing for tour:', tour?._id || 'unknown');
         throw new Error('Data tur tidak lengkap');
     }
 
     // Validasi email
     const recipientEmail = tour.userId.email;
     if (!recipientEmail) {
-        console.error('Error: User email is missing for tour:', tour._id);
+        console.error('Error: User email is missing for tour:', tour._id, 'userId:', tour.userId._id);
         throw new Error('Email pengguna tidak ditemukan');
     }
 

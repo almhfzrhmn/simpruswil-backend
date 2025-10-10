@@ -821,9 +821,24 @@ router.patch('/:id/status', protect, authorize('admin'), async (req, res) => {
       // Don't fail the request if email fails
     }
 
+    let actionMessage;
+    switch (status) {
+      case 'approved':
+        actionMessage = 'disetujui';
+        break;
+      case 'rejected':
+        actionMessage = 'ditolak';
+        break;
+      case 'completed':
+        actionMessage = 'ditandai selesai';
+        break;
+      default:
+        actionMessage = 'diupdate';
+    }
+
     res.status(200).json({
       success: true,
-      message: `Booking berhasil ${status === 'approved' ? 'disetujui' : 'ditolak'}`,
+      message: `Booking berhasil ${actionMessage}`,
       data: booking
     });
 
