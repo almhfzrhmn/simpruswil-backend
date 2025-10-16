@@ -245,6 +245,7 @@ router.get('/my-bookings', protect, async (req, res) => {
     const bookingsWithUrls = bookings.map(booking => ({
       ...booking.toObject(),
       documentUrl: generateDownloadUrl(req, booking.documentPath),
+      documentViewUrl: `${req.protocol}://${req.get('host')}/${booking.documentPath}`,
       roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
     }));
 
@@ -296,6 +297,7 @@ router.get('/:id', protect, async (req, res) => {
       data: {
         ...booking.toObject(),
         documentUrl: generateDownloadUrl(req, booking.documentPath),
+        documentViewUrl: booking.documentPath ? `${req.protocol}://${req.get('host')}/${booking.documentPath}` : null,
         roomImageUrl: booking.roomId && booking.roomId.image ? `${req.protocol}://${req.get('host')}/${booking.roomId.image}` : null
       }
     });
