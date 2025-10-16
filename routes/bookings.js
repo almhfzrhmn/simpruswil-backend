@@ -173,7 +173,8 @@ router.post('/', protect, uploadDocument, handleUploadError, generateFileUrl, as
       message: 'Booking berhasil diajukan. Menunggu persetujuan admin.',
       data: {
         ...booking.toObject(),
-        documentUrl: generateDownloadUrl(req, booking.documentPath)
+        documentUrl: generateDownloadUrl(req, booking.documentPath),
+        documentViewUrl: booking.documentPath ? `${req.protocol}://${req.get('host')}/${booking.documentPath}` : null
       }
     });
 
@@ -497,7 +498,8 @@ router.put('/:id', protect, uploadDocument, handleUploadError, generateFileUrl, 
       message: 'Booking berhasil diupdate',
       data: {
         ...updatedBooking.toObject(),
-        documentUrl: generateDownloadUrl(req, updatedBooking.documentPath)
+        documentUrl: generateDownloadUrl(req, updatedBooking.documentPath),
+        documentViewUrl: updatedBooking.documentPath ? `${req.protocol}://${req.get('host')}/${updatedBooking.documentPath}` : null
       }
     });
 
