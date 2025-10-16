@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const fs = require('fs');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
@@ -164,65 +163,6 @@ app.get('/test-email', async (req, res) => {
       error: error.message
     });
   }
-});
-
-// Download/View document route
-app.get('/download/uploads/documents/:filename', (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(__dirname, 'uploads', 'documents', filename);
-
-  // Check if file exists
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({
-      success: false,
-      message: 'File not found'
-    });
-  }
-
-  // Determine content type based on file extension
-  const ext = filename.split('.').pop().toLowerCase();
-  let contentType = 'application/octet-stream';
-  let disposition = 'attachment';
-
-  switch (ext) {
-    case 'pdf':
-      contentType = 'application/pdf';
-      disposition = 'inline'; // Allow inline viewing for PDFs
-      break;
-    case 'jpg':
-    case 'jpeg':
-      contentType = 'image/jpeg';
-      disposition = 'inline';
-      break;
-    case 'png':
-      contentType = 'image/png';
-      disposition = 'inline';
-      break;
-    case 'doc':
-      contentType = 'application/msword';
-      break;
-    case 'docx':
-      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      break;
-  }
-
-  // Set headers
-  res.setHeader('Content-Type', contentType);
-  res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
-
-  // Stream the file
-  const fileStream = fs.createReadStream(filePath);
-  fileStream.pipe(res);
-
-  fileStream.on('error', (error) => {
-    console.error('Error streaming file:', error);
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        message: 'Error downloading file'
-      });
-    }
-  });
 });
 
 

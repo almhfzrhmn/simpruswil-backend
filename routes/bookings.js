@@ -16,8 +16,7 @@ const router = express.Router();
 // Helper function to generate download URL
 const generateDownloadUrl = (req, documentPath) => {
   if (!documentPath) return null;
-  const filename = documentPath.split('/').pop();
-  return `${req.protocol}://${req.get('host')}/download/uploads/documents/${filename}`;
+  return `${req.protocol}://${req.get('host')}/${documentPath}`;
 };
 
 // @desc    Create new booking
@@ -109,19 +108,23 @@ router.post('/', protect, uploadDocument, handleUploadError, generateFileUrl, as
       });
     }
 
-    // Check working hours (convert UTC to Jakarta time UTC+7)
-    const startHour = (bookingStartTime.getUTCHours() + 7) % 24;
-    const endHour = (bookingEndTime.getUTCHours() + 7) % 24;
-    const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
-    const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
+    // Check working hours only for single-day bookings (convert UTC to Jakarta time UTC+7)
+    const isMultiDay = bookingStartTime.toDateString() !== bookingEndTime.toDateString();
 
-    if (startHour < roomStartHour || endHour > roomEndHour) {
-      const startTimeStr = room.operatingHours && room.operatingHours.start ? room.operatingHours.start : '08:00';
-      const endTimeStr = room.operatingHours && room.operatingHours.end ? room.operatingHours.end : '17:00';
-      return res.status(400).json({
-        success: false,
-        message: `Ruangan hanya beroperasi dari ${startTimeStr} - ${endTimeStr}`
-      });
+    if (!isMultiDay) {
+      const startHour = (bookingStartTime.getUTCHours() + 7) % 24;
+      const endHour = (bookingEndTime.getUTCHours() + 7) % 24;
+      const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
+      const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
+
+      if (startHour < roomStartHour || endHour > roomEndHour) {
+        const startTimeStr = room.operatingHours && room.operatingHours.start ? room.operatingHours.start : '08:00';
+        const endTimeStr = room.operatingHours && room.operatingHours.end ? room.operatingHours.end : '17:00';
+        return res.status(400).json({
+          success: false,
+          message: `Ruangan hanya beroperasi dari ${startTimeStr} - ${endTimeStr}`
+        });
+      }
     }
 
     // Create booking data
@@ -415,19 +418,23 @@ router.put('/:id', protect, uploadDocument, handleUploadError, generateFileUrl, 
         });
       }
 
-      // Check working hours (convert UTC to Jakarta time UTC+7)
-      const newStartHour = (newStartTime.getUTCHours() + 7) % 24;
-      const newEndHour = (newEndTime.getUTCHours() + 7) % 24;
-      const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
-      const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
+      // Check working hours only for single-day bookings (convert UTC to Jakarta time UTC+7)
+      const isMultiDayUpdate = newStartTime.toDateString() !== newEndTime.toDateString();
 
-      if (newStartHour < roomStartHour || newEndHour > roomEndHour) {
-        const startTimeStr = room.operatingHours && room.operatingHours.start ? room.operatingHours.start : '08:00';
-        const endTimeStr = room.operatingHours && room.operatingHours.end ? room.operatingHours.end : '17:00';
-        return res.status(400).json({
-          success: false,
-          message: `Ruangan hanya beroperasi dari ${startTimeStr} - ${endTimeStr}`
-        });
+      if (!isMultiDayUpdate) {
+        const newStartHour = (newStartTime.getUTCHours() + 7) % 24;
+        const newEndHour = (newEndTime.getUTCHours() + 7) % 24;
+        const roomStartHour = room.operatingHours && room.operatingHours.start ? parseInt(room.operatingHours.start.split(':')[0]) : 8;
+        const roomEndHour = room.operatingHours && room.operatingHours.end ? parseInt(room.operatingHours.end.split(':')[0]) : 17;
+
+        if (newStartHour < roomStartHour || newEndHour > roomEndHour) {
+          const startTimeStr = room.operatingHours && room.operatingHours.start ? room.operatingHours.start : '08:00';
+          const endTimeStr = room.operatingHours && room.operatingHours.end ? room.operatingHours.end : '17:00';
+          return res.status(400).json({
+            success: false,
+            message: `Ruangan hanya beroperasi dari ${startTimeStr} - ${endTimeStr}`
+          });
+        }
       }
 
       // Check for conflicts (excluding current booking)

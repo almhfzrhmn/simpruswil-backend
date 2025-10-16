@@ -142,9 +142,12 @@ bookingSchema.pre('save', function(next) {
       return next(new Error('Tidak dapat membuat booking untuk waktu yang sudah lewat'));
     }
     
-    // Validate booking duration (max 12 hours for flexibility)
+    // Validate booking duration
     const duration = (this.endTime - this.startTime) / (1000 * 60 * 60);
-    if (duration > 12) {
+    const isMultiDay = this.startTime.toDateString() !== this.endTime.toDateString();
+
+    // For single-day bookings, max 12 hours; for multi-day, no limit
+    if (!isMultiDay && duration > 12) {
       return next(new Error('Durasi peminjaman maksimal 12 jam'));
     }
   }

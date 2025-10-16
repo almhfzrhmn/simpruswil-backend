@@ -15,8 +15,7 @@ const router = express.Router();
 // Helper function to generate download URL
 const generateDownloadUrl = (req, documentPath) => {
   if (!documentPath) return null;
-  const filename = documentPath.split('/').pop();
-  return `${req.protocol}://${req.get('host')}/download/uploads/documents/${filename}`;
+  return `${req.protocol}://${req.get('host')}/${documentPath}`;
 };
 
 // @desc    Create new tour request
