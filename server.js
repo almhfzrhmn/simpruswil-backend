@@ -85,7 +85,14 @@ app.use('/auth/', authLimiter);
 const uploadsPath = path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath, {
   maxAge: '1d', // Cache for 1 day
-  etag: true
+  etag: true,
+  setHeaders: (res, path) => {
+    // Add CORS headers for static files
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
 }));
 
 // Download route for secure file access
