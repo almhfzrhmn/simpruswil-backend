@@ -17,6 +17,12 @@ const generateDownloadUrl = (req, documentPath) => {
   return `${req.protocol}://${req.get('host')}/download/uploads/${type}/${filename}`;
 };
 
+// Helper function to generate view URL (for inline viewing)
+const generateViewUrl = (req, documentPath) => {
+  if (!documentPath) return null;
+  return `${req.protocol}://${req.get('host')}/${documentPath}`;
+};
+
 // All routes in this file require admin authorization
 router.use(protect, authorize('admin'));
 
@@ -187,7 +193,8 @@ router.get('/dashboard', async (req, res) => {
     // Add document URLs to pending bookings
     const pendingBookingsWithUrls = pendingBookings.map(booking => ({
       ...booking.toObject(),
-      documentUrl: generateDownloadUrl(req, booking.documentPath)
+      documentUrl: generateDownloadUrl(req, booking.documentPath),
+      documentViewUrl: generateViewUrl(req, booking.documentPath)
     }));
 
     res.status(200).json({

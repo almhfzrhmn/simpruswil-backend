@@ -88,6 +88,36 @@ app.use('/uploads', express.static(uploadsPath, {
   etag: true
 }));
 
+// Download route for secure file access
+app.get('/download/uploads/:type/:filename', (req, res) => {
+  const { type, filename } = req.params;
+  const filePath = path.join(__dirname, 'uploads', type, filename);
+
+  // Check if file exists
+  if (!require('fs').existsSync(filePath)) {
+    return res.status(404).json({
+      success: false,
+      message: 'File tidak ditemukan'
+    });
+  }
+
+  // Set appropriate headers for download
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', 'application/octet-stream');
+
+  // Stream the file
+  const fileStream = require('fs').createReadStream(filePath);
+  fileStream.pipe(res);
+
+  fileStream.on('error', (error) => {
+    console.error('File streaming error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saat mengunduh file'
+    });
+  });
+});
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/rooms', roomRoutes);
